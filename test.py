@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.signal import convolve
+from scipy.signal import convolve,convolve2d
 '''
 A = np.arange(0,12).reshape(2,2,3)
 AA = np.arange(0,12).reshape(3,4)
@@ -62,9 +62,11 @@ def im2col_sliding_broadcasting(A, BSZ, stepsize=1):
     # Get all actual indices & index into input array for final output
     return np.take (A,start_idx.ravel()[:,None] + offset_idx.ravel()[::stepsize])
 
-mat = np.arange(0,16).reshape(4,2,2)
+mat = np.arange(0,16).reshape(4,4)
+A = np.array([[1,-1],[2,1]])
 
-print(convolve(mat[:],))
+print(convolve(mat,A))
+print(convolve2d(mat,A))
 # print(mat[:,::-1,::-1])
 # a = np.arange(-36,0).reshape(6,6)
 # print(mat.sum(axis=(1,2)))

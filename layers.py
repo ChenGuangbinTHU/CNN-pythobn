@@ -1,4 +1,5 @@
 import numpy as np
+from functions1 import conv2d_forward1, conv2d_backward1, avgpool2d_forward1, avgpool2d_backward1
 from functions import conv2d_forward, conv2d_backward, avgpool2d_forward, avgpool2d_backward
 from utils import log
 
@@ -120,6 +121,8 @@ class Conv2D(Layer):
     def backward(self, grad_output):
         input = self._saved_tensor
         grad_input, self.grad_W, self.grad_b = conv2d_backward(input, grad_output, self.W, self.b, self.kernel_size, self.pad)
+        grad_input1, W, b = conv2d_backward1(input, grad_output, self.W, self.b, self.kernel_size, self.pad)
+        # print(np.equal(self.grad_W,W))
         return grad_input
 
     def update(self, config):

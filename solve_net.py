@@ -12,18 +12,19 @@ def data_iterator(x, y, batch_size, shuffle=True):
         yield x[indx[start_idx: end_idx]], y[indx[start_idx: end_idx]]
 
 
-def train_net(model, loss, config, inputs, labels, batch_size, disp_freq):
+def train_net(model, loss, config, inputs, labels, batch_size, disp_freq,f):
 
     iter_counter = 0
     loss_list = []
     acc_list = []
-
-    for input, label in data_iterator(inputs, labels, batch_size):
+    show = True
+    for input, label in data_iterator(inputs, labels, batch_size,False):
         target = onehot_encoding(label, 10)
         iter_counter += 1
 
         # forward net
-        output = model.forward(input)
+        output = model.forward(input=input,show=show)
+        show = False
         # calculate loss
         loss_value = loss.forward(output, target)
         # generate gradient w.r.t loss
@@ -43,15 +44,16 @@ def train_net(model, loss, config, inputs, labels, batch_size, disp_freq):
             loss_list = []
             acc_list = []
             LOG_INFO(msg)
+            f.write(msg+'\n')
 
 
-def test_net(model, loss, inputs, labels, batch_size):
+def test_net(model, loss, inputs, labels, batch_size,f):
     loss_list = []
     acc_list = []
 
     for input, label in data_iterator(inputs, labels, batch_size, shuffle=False):
         target = onehot_encoding(label, 10)
-        output = model.forward(input)
+        output = model.forward(input,False)
         loss_value = loss.forward(output, target)
         acc_value = calculate_acc(output, label)
         loss_list.append(loss_value)
@@ -59,3 +61,4 @@ def test_net(model, loss, inputs, labels, batch_size):
 
     msg = '    Testing, total mean loss %.5f, total acc %.5f' % (np.mean(loss_list), np.mean(acc_list))
     LOG_INFO(msg)
+    f.write(msg+'\n')

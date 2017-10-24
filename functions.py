@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.signal import convolve
+from scipy.signal import convolve,convolve2d
 import time
 from utils import log
 
@@ -23,25 +23,18 @@ def conv2d_forward(input, W, b, kernel_size, pad):
     # log('conv forward',input)
     n, c_in, h_in, w_in = input.shape
     c_out, _, _, _ = W.shape
-    # input = np.pad(input,pad,'constant')
     output = np.zeros([n,c_out,h_in+2*pad-kernel_size+1,w_in+2*pad-kernel_size+1])
-    # print(output.shape)
     for i in range(c_out):
         for j in range(c_in):
             pad_input = np.pad(input[:,j,:,:],((0,0),(pad,pad),(pad,pad)),'constant')
             kernel = W[i,j,:,:]
             kernel = kernel[None,:,:]
-            conv_result = convolve(pad_input,kernel,'valid')+b[i]
-            # print(conv_result.shape)
-            # print(conv_result.sum(axis=2).shape)
+            conv_result = np.zeros([n,h_in+2*pad-kernel_size+1,w_in+2*pad-kernel_size+1])
+            # conv_result = convolve(pad_input,np.rot90(W[i][j],2),'valid')+b[i]
+            for k in range(n):
+                conv_result[k] = conv_result[k] + convolve2d(pad_input[k],np.rot90(W[i][j],2),'valid')
+            conv_result = conv_result+b[i]
             output[:,i,:,:] = output[:,i,:,:]+conv_result
-            # print(i)
-            # print(output)
-            # print(conv_result.shape)
-            # print(kernel.shape)
-            # print(pad_input.shape)
-            # output[i] = np.sum(output[i],np.sum())
-    # print(output.shape)
     return output
     pass
 
@@ -69,19 +62,25 @@ def conv2d_backward(input, grad_output, W, b, kernel_size, pad):
     _, c_in, h_in, w_in = input.shape
     #print(input.shape)
     #print(grad_output.shape)
-    grad_input = np.zeros([n,c_in,h_in,h_out])
+    grad_input = np.zeros([n,c_in,h_in,w_in])
     grad_W = np.zeros(W.shape)
     grad_b = np.zeros([c_out])
     rot_grad = grad_output[:,:,::-1,::-1]
+    # grad_output2 = grad_output[np.ix_(np.arange(n), np.arange(c_out), np.arange(pad, h_out-pad), np.arange(pad, w_out-pad))]
+    grad_output = grad_output[:,:,1:-1,1:-1]
+    # print(np.equal(grad_output2,grad_output1))
     for i in range(c_out):
         for j in range(c_in):
             kernel = W[i,j,:,:]
             kernel = kernel[None,:,:]
             grad = grad_output[:,i,:,:]
-            conv = convolve(grad,kernel,'full')[:,1:-1,1:-1]
-            grad_input[:,j,:,:] = grad_input[:,j,:,:] + conv
+            conv_result = np.zeros([n,h_in,w_in])
             for k in range(n):
-                grad_W[i,j,:,:] = grad_W[i,j,:,:] + convolve(input[k,j,:,:],rot_grad[k,i,:,:],'valid')
+                grad_input[k][j] = grad_input[k][j] + convolve2d(grad_output[k][i], W[i][j], mode='full')
+            # conv = conv_result[:,1:-1,1:-1]
+            
+            for k in range(n):
+                grad_W[i,j,:,:] = grad_W[i,j,:,:] + convolve2d(input[k,j,:,:],np.rot90(grad_output[k][i], 2),'valid')
             # grad_W[:,i,:,:] = grad_W[:,i,:,:]+
     grad_b = np.sum(grad_output,axis=(0,2,3))
     # print(grad_b.shape)
